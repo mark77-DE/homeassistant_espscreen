@@ -1567,6 +1567,13 @@ class FetchMore(unittest.TestCase):
                                          {'path': pm.parse_path('steps[*].text', root=False), 'as': 'texts'})
         self.assertEqual(value, 'ä' * (plugin_fetch.TEXT_LIST_BYTES // len('ä'.encode())))
 
+        empty_path = pm.parse_path('items[*].text', root=False)
+        self.assertEqual(plugin_fetch.field_value({}, {'path': empty_path, 'as': 'texts'}), [])
+        self.assertEqual(plugin_fetch.field_value({'items': []}, {'path': empty_path, 'as': 'texts'}), [])
+        many = {'items': [{'text': f'Step {i}'} for i in range(plugin_fetch.MAX_ITEMS + 5)]}
+        self.assertEqual(len(plugin_fetch.field_value(many, {'path': empty_path, 'as': 'texts'})),
+                         plugin_fetch.MAX_ITEMS)
+
         # Mapped text lists remain intact when the complete Mealie-style response fits the screen's answer budget.
         import plugins as plugin_service
         realistic = {'ingredients': [f'Ingredient {i}: 75 grams, finely chopped' for i in range(13)],
