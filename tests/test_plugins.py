@@ -1537,6 +1537,43 @@ class FetchMore(unittest.TestCase):
         pm.check(with_url('0.28'), PLACE_ENGLISH)
         self.refuses(with_url('0.27'), 'a field "as: url" needs plugin API 0.28')
 
+    def test_text_fields_can_map_ordered_arrays(self):
+        # A text field is one short label (48 bytes); a text list (0.29) carries full ingredient names and instruction
+        # sentences, bounded per entry and as a whole answer.
+        raw = {'recipe': {
+            'ingredients': [{'display': '75 Gramm Zwiebeln, fein gehackt'},
+                            {'display': '2 Knoblauchzehen'}, {'display': None}, {'other': 'not a display'}],
+            'instructions': [{'text': 'Finely chop the onions and garlic.'},
+                             {'text': 'Add the remaining ingredients and simmer.'},
+                             {'text': ''}]}}
+        fields = {
+            'ingredients': {'path': 'recipe.ingredients[*].display', 'as': 'texts'},
+            'instructions': {'path': 'recipe.instructions[*].text', 'as': 'texts'},
+        }
+        with self.assertRaises(pm.ManifestError) as caught:
+            pm.check_map({'fields': fields}, 'map', False, api='0.28')
+        self.assertIn('needs plugin API 0.29', str(caught.exception))
+        spec = pm.check_map({'fields': fields}, 'map', False, api='0.29')
+        mapped = plugin_fetch.apply_map(spec, raw)
+        self.assertEqual(mapped['ingredients'], ['75 Gramm Zwiebeln, fein gehackt', '2 Knoblauchzehen'])
+        self.assertEqual(mapped['instructions'], [
+            'Finely chop the onions and garlic.',
+            'Add the remaining ingredients and simmer.',
+        ])
+
+        # A long sentence is kept as a useful text (up to TEXT_LIST_BYTES), without cutting a UTF-8 character.
+        long_text = 'ä' * 300
+        value = plugin_fetch.field_value({'steps': [{'text': long_text}]},
+                                         {'path': pm.parse_path('steps[*].text', root=False), 'as': 'texts'})
+        self.assertEqual(value, 'ä' * (plugin_fetch.TEXT_LIST_BYTES // len('ä'.encode())))
+
+        # Mapped text lists remain intact when the complete Mealie-style response fits the screen's answer budget.
+        import plugins as plugin_service
+        realistic = {'ingredients': [f'Ingredient {i}: 75 grams, finely chopped' for i in range(13)],
+                     'instructions': [f'Preparation step {i}: mix thoroughly and simmer until ready.' for i in range(3)]}
+        bounded = plugin_service.bounded(realistic, mapped=True)
+        self.assertEqual(bounded, realistic)
+
     def test_places_for_pictures_in_a_popup(self):
         base = place_plugin(url='https://api.example.org/now', cards=[{'id': 'sky', 'name': 'card', 'pictures': 1}])
         out = pm.check({**base, 'popups': [{'id': 'photo', 'pictures': 2}]}, PLACE_ENGLISH)
