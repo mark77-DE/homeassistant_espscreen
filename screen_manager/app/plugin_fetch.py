@@ -34,6 +34,7 @@ MAX_BYTES = 64 * 1024
 TIMEOUT = 10
 TEXT_BYTES = 48
 URL_BYTES = 255            # a field "as: url" (plugin API 0.28): a picture's address whole, never cut
+TEXT_LIST_BYTES = 512      # a field "as: texts" (plugin API 0.29): each list entry, longer than a short label
 BACKOFF = (60, 120, 300, 900)
 FORGET_AFTER = 2           # intervals a question nobody asks for stays in the cache
 # The most questions kept at once. Each holds an answer of up to MAX_BYTES, parsed, so this is about 8 MB at the very
@@ -157,6 +158,10 @@ def field_value(item, field):
     if field['as'] == 'numbers':
         # Every value the path reaches, in order, as one list: `[*].value` of 96 objects is 96 numbers.
         return [number_of(value) for value in walk(item, field['path'])[:1000]]
+    if field['as'] == 'texts':
+        # Every text the path reaches, in order; unlike a label, a recipe instruction may be a full sentence.
+        return [short(value, TEXT_LIST_BYTES) for value in walk(item, field['path'])[:MAX_ITEMS]
+                if isinstance(value, str) and value]
     value = first(item, field['path'])
     if field['as'] == 'epoch':
         return epoch_of(value, field.get('tz'))
