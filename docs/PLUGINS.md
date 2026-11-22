@@ -5,7 +5,7 @@ from a web service, hardware on one board, a feature not everyone needs. How to 
 [github.com/MaxGramser/tessera-plugins](https://github.com/MaxGramser/tessera-plugins) (its `docs/` and `AGENTS.md`).
 This page is the core's side: what the firmware, the add-on and the editor do, and the rules a change here keeps.
 
-Plugins are on in every app since 0.4.87 (the plugin API is 0.28 now); before, only in the dev app.
+Plugins are on in every app since 0.4.87 (the plugin API is 0.29 now); before, only in the dev app.
 `core.plugins_enabled()` is the one switch: false takes the Plugins page, its routes and its loops out of the app.
 
 **The API's number.** A plugin builds on every core with the same major and at least its minor. From 1.0 on that is a
@@ -174,7 +174,7 @@ saved there. Every value kept before 0.12 is still valid.
   prices (`tests/fixtures/plugins/prices/`) in the shape of every integration that gives one: an attribute list of
   numbers or of objects, or an action's answer, with each way Home Assistant writes a moment.
 - **One path language.** A fetch's `map`, a tile's `fields` and an answer's `fields` share `parse_path` and
-  `plugin_fetch.field_value`, and the kinds `text`, `number`, `epoch` and `numbers`. A new kind or step goes there,
+  `plugin_fetch.field_value`, and the kinds `text`, `number`, `epoch`, `numbers`, `url` and `texts` (0.29: an ordered list of bounded strings from a path such as `ingredients[*].display`). A new kind or step goes there,
   for all three.
 - **The host proves the host.** A change to `plugin_host.cpp`, `plugin_api.h` or the receiver's plugin fields runs
   `tools/render/run.py --plugin tests/fixtures/plugins/host_probe`, plain (the CYD's path: a card made anew when its
