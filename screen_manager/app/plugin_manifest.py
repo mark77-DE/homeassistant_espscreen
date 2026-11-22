@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 # The plugin API this core offers (components/smart_display/plugin_api.h, PLUGIN_API_MAJOR/MINOR; a test keeps them
 # equal). A plugin names the API it was written for; it builds on every core with the same major and at least its minor.
 # Something new raises the minor; a plugin builds on the same major from its own minor up. Only a break raises the major.
-PLUGIN_API = (0, 28)
+PLUGIN_API = (0, 29)
 # Major 0 is the time before that promise: a minor may still change a name or a signature, or take a form away (a plugin
 # that uses it then fails in the compiler, 0.24). A minor after which an older plugin would still build but work wrongly
 # is listed here (and in __init__.py's PLUGIN_API_BREAKS; a test keeps them equal), so such a plugin is told so in one
@@ -77,8 +77,9 @@ INPUT_KINDS = ('secret', 'text', 'gpio', 'entity')
 OPTION_KINDS = ('text', 'choice', 'number', 'toggle', 'entity')
 # `numbers` (0.5): every value the path reaches, as one list of numbers (a price per quarter of an hour, a forecast).
 # `url` (0.28): a web address, whole up to URL_BYTES (a picture's, for ui::set_picture), where a text stops at 48 bytes.
-FIELD_KINDS = ('text', 'number', 'epoch', 'numbers', 'url')
+FIELD_KINDS = ('text', 'number', 'epoch', 'numbers', 'url', 'texts')
 URL_API = (0, 28)
+TEXTS_API = (0, 29)
 UNITS = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
 # Licences that go with AGPL-3.0, the licence the firmware a plugin is built into carries.
 LICENSES = ('MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', 'MPL-2.0', 'LGPL-2.1-or-later',
@@ -657,6 +658,8 @@ def check_fields(fields, where, each=False, api=None):
             raise ManifestError(f'{at}.as', f'one of {", ".join(FIELD_KINDS)}')
         if kind == 'url':
             needs_api('a field "as: url"', f'{at}.as', api or '.'.join(map(str, PLUGIN_API)), URL_API)
+        if kind == 'texts':
+            needs_api('a field "as: texts"', f'{at}.as', api or '.'.join(map(str, PLUGIN_API)), TEXTS_API)
         if 'tz' in field and (kind != 'epoch' or not isinstance(field['tz'], str)):
             raise ManifestError(f'{at}.tz', 'a time zone such as Europe/Amsterdam, only for "as: epoch"')
         try:
